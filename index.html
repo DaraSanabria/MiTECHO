@@ -1,0 +1,919 @@
+<title>Segmentador de comunicaciones</title>
+<meta name="description" content="Rediseño de la pantalla Nueva comunicación de TECHO con constructor de segmentos y alcance en vivo." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" />
+<style>
+  :root{
+    --celeste:#0092DD;--azul:#005CA9;--verde:#2FAC66;--amarillo:#FDC533;--coral:#E94362;--violeta:#954B97;
+    --ground:#eef3f8;--surface:#ffffff;--surface-2:#f5f8fb;--surface-sunken:#eaf0f6;
+    --ink:#12303f;--ink-2:#4a6070;--ink-3:#7f94a3;--border:#d9e3ec;--border-strong:#c2d2df;
+    --accent-soft:#e3f2fc;--verde-soft:#e2f4ea;--coral-soft:#fce4e9;--amarillo-soft:#fdf3d6;
+    --nav-bg:#0f2937;--nav-ink:#cddbe6;--nav-ink-dim:#7f97a8;--nav-active:#0092DD;
+    --shadow-sm:0 1px 2px rgba(18,48,63,.06), 0 1px 3px rgba(18,48,63,.05);
+    --shadow-md:0 4px 14px rgba(18,48,63,.08), 0 2px 4px rgba(18,48,63,.05);
+    --shadow-rail:0 8px 30px rgba(0,92,169,.12);
+    --radius:14px;--radius-sm:10px;
+    --font-display:'Fredoka',system-ui,sans-serif;--font-body:'Montserrat',system-ui,sans-serif;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    color-scheme:dark;
+    --ground:#0a151d;--surface:#122636;--surface-2:#0f2130;--surface-sunken:#0c1b28;
+    --ink:#e8f1f7;--ink-2:#a9bfce;--ink-3:#7690a2;--border:#23404f;--border-strong:#2f5062;
+    --accent-soft:#103247;--verde-soft:#10352a;--coral-soft:#3a1a24;--amarillo-soft:#37301a;
+    --nav-bg:#081018;--nav-ink:#bcd0dd;--nav-ink-dim:#61798a;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4);--shadow-md:0 4px 14px rgba(0,0,0,.45);--shadow-rail:0 8px 30px rgba(0,0,0,.5);
+  }}
+  :root[data-theme="dark"]{
+    color-scheme:dark;
+    --ground:#0a151d;--surface:#122636;--surface-2:#0f2130;--surface-sunken:#0c1b28;
+    --ink:#e8f1f7;--ink-2:#a9bfce;--ink-3:#7690a2;--border:#23404f;--border-strong:#2f5062;
+    --accent-soft:#103247;--verde-soft:#10352a;--coral-soft:#3a1a24;--amarillo-soft:#37301a;
+    --nav-bg:#081018;--nav-ink:#bcd0dd;--nav-ink-dim:#61798a;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4);--shadow-md:0 4px 14px rgba(0,0,0,.45);--shadow-rail:0 8px 30px rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--font-body);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  h1,h2,h3,h4{font-family:var(--font-display);font-weight:600;margin:0;text-wrap:balance}
+  button{font-family:inherit;cursor:pointer}
+  .tnum{font-variant-numeric:tabular-nums}
+
+  .app{display:flex;min-height:100vh}
+  .nav{width:232px;flex-shrink:0;background:var(--nav-bg);color:var(--nav-ink);display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+  .nav__brand{display:flex;align-items:center;gap:10px;padding:20px 22px 16px}
+  .nav__user{display:flex;align-items:center;gap:11px;padding:14px 22px;border-top:1px solid rgba(255,255,255,.07);border-bottom:1px solid rgba(255,255,255,.07)}
+  .nav__avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--celeste),var(--azul));display:grid;place-items:center;font-family:var(--font-display);font-weight:600;color:#fff;font-size:15px}
+  .nav__user b{font-size:13.5px;color:#fff;font-weight:600}
+  .nav__role{font-size:11px;color:#4fd07f;display:flex;align-items:center;gap:5px}
+  .nav__role::before{content:"";width:7px;height:7px;border-radius:50%;background:#4fd07f}
+  .nav__menu{padding:12px 12px;overflow-y:auto;flex:1}
+  .nav__label{font-size:10.5px;letter-spacing:.13em;color:var(--nav-ink-dim);padding:8px 10px 6px}
+  .nav__item{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:9px;color:var(--nav-ink);font-size:13.5px;text-decoration:none;margin-bottom:2px}
+  .nav__item svg{width:17px;height:17px;opacity:.8;flex-shrink:0}
+  .nav__item:hover{background:rgba(255,255,255,.06)}
+  .nav__item.is-active{background:var(--nav-active);color:#fff;font-weight:600}
+  .nav__item.is-active svg{opacity:1}
+  .nav__sub{padding:3px 0 6px 40px;display:flex;flex-direction:column;gap:2px}
+  .nav__sub a{color:var(--nav-ink-dim);font-size:12.5px;text-decoration:none;padding:4px 0}
+  .nav__sub a.is-active{color:#fff}
+
+  .main{flex:1;min-width:0;display:flex;flex-direction:column}
+  .topbar{height:56px;background:linear-gradient(90deg,var(--celeste),var(--azul));display:flex;align-items:center;justify-content:space-between;padding:0 22px;color:#fff;position:sticky;top:0;z-index:20}
+  .topbar__left{display:flex;align-items:center;gap:14px}
+  .burger{background:rgba(255,255,255,.14);border:none;color:#fff;width:34px;height:34px;border-radius:8px;display:grid;place-items:center}
+  .topbar__title{font-family:var(--font-display);font-weight:500;font-size:15px}
+  .topbar__right{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:500}
+  .theme-toggle{background:rgba(255,255,255,.14);border:none;color:#fff;width:34px;height:34px;border-radius:8px;display:grid;place-items:center}
+  .theme-toggle svg{width:17px;height:17px}
+
+  .content{padding:24px clamp(16px,2.4vw,30px) 48px;width:100%}
+  .page-head{margin-bottom:20px}
+  .page-head h1{font-size:clamp(24px,3vw,30px);font-weight:600}
+  .page-head p{color:var(--ink-2);margin:6px 0 0;max-width:62ch}
+  .top-row{display:grid;grid-template-columns:minmax(0,1fr) 352px;gap:22px;align-items:start;margin-bottom:18px}
+  @media (max-width:900px){.top-row{grid-template-columns:1fr}}
+
+  .step{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);margin-bottom:18px}
+  .step__head{display:flex;align-items:flex-start;gap:13px;padding:18px 20px 8px}
+  .step__num{width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--azul);display:grid;place-items:center;font-family:var(--font-display);font-weight:600;font-size:14px;flex-shrink:0;margin-top:1px}
+  .step__titles h2{font-size:17px}
+  .step__titles p{color:var(--ink-2);font-size:12.5px;margin:2px 0 0}
+  .step__body{padding:6px 20px 20px 59px}
+  @media (max-width:560px){.step__body{padding-left:20px}}
+
+  .optrow{display:flex;gap:12px;flex-wrap:wrap}
+  .optcard{position:relative;flex:1 1 150px;min-width:140px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);padding:15px 14px;text-align:center;transition:border-color .15s,box-shadow .15s}
+  .optcard:hover:not([disabled]){border-color:var(--border-strong)}
+  .optcard[aria-pressed="true"]{border-color:var(--celeste);box-shadow:0 0 0 3px var(--accent-soft)}
+  .optcard[disabled]{opacity:.5;cursor:not-allowed}
+  .optcard__ico{width:30px;height:30px;margin:0 auto 8px;color:var(--celeste)}
+  .optcard[aria-pressed="true"] .optcard__ico{color:var(--azul)}
+  .optcard b{display:block;font-family:var(--font-display);font-size:14.5px;font-weight:600}
+  .optcard span{display:block;color:var(--ink-2);font-size:11.5px;margin-top:2px;line-height:1.35}
+  .optcard__check{position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:var(--celeste);color:#fff;display:none;place-items:center}
+  .optcard[aria-pressed="true"] .optcard__check{display:grid}
+  .optcard__soon{position:absolute;top:8px;right:8px;font-size:9.5px;font-weight:600;letter-spacing:.04em;background:var(--surface-sunken);color:var(--ink-3);padding:2px 7px;border-radius:20px}
+  .field-label{display:block;font-weight:600;font-size:12.5px;margin-bottom:6px;color:var(--ink)}
+
+  .callout{display:flex;gap:10px;align-items:flex-start;background:var(--accent-soft);border:1px solid #bfe2f7;border-radius:var(--radius-sm);padding:11px 13px;font-size:12.5px;color:var(--azul);margin-top:14px}
+  :root[data-theme="dark"] .callout,:root:not([data-theme="light"]) .callout{border-color:#1c4d68}
+  .callout svg{width:17px;height:17px;flex-shrink:0;margin-top:1px}
+
+  .perfil-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:6px}
+  @media (min-width:660px){.perfil-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+  .perfil{display:flex;align-items:center;gap:10px;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 12px;background:var(--surface);text-align:left;transition:border-color .15s,background .15s}
+  .perfil:hover{border-color:var(--border-strong)}
+  .perfil:focus-visible{outline:2px solid var(--celeste);outline-offset:1px}
+  .perfil[aria-pressed="true"]{border-color:var(--celeste);background:var(--accent-soft)}
+  .perfil__dot{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;flex-shrink:0;color:#fff}
+  .perfil__dot svg{width:16px;height:16px}
+  .perfil__txt{min-width:0;flex:1}
+  .perfil__txt b{display:block;font-family:var(--font-display);font-size:13.5px;font-weight:600;line-height:1.2}
+  .perfil__txt span{display:block;font-size:11px;color:var(--ink-2)}
+  .perfil__count{margin-left:6px;font-size:12px;font-weight:600;color:var(--ink-2);white-space:nowrap;flex-shrink:0}
+  .perfil[aria-pressed="true"] .perfil__count{color:var(--azul)}
+
+  .facets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 22px;margin-top:4px}
+  @media (max-width:720px){.facets{grid-template-columns:1fr}}
+  .facet--full{grid-column:1/-1}
+  .facet__head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px}
+  .facet__head b{font-size:12.5px;font-weight:600}
+  .facet__head .mini{font-size:10.5px;color:var(--ink-3);font-weight:500}
+  .facet--equipo{grid-column:1/-1;background:var(--verde-soft);border:1px solid #bfe6cf;border-radius:var(--radius-sm);padding:12px 13px}
+  :root[data-theme="dark"] .facet--equipo,:root:not([data-theme="light"]) .facet--equipo{border-color:#1e5a41}
+  .facet--base{grid-column:1/-1;background:var(--accent-soft);border:1px solid #bfe2f7;border-radius:var(--radius-sm);padding:12px 13px}
+  :root[data-theme="dark"] .facet--base,:root:not([data-theme="light"]) .facet--base{border-color:#1c4d68}
+  .opts{display:flex;flex-direction:column;gap:2px;max-height:170px;overflow-y:auto;padding-right:4px}
+  .opts.chips{flex-direction:row;flex-wrap:wrap;gap:7px;max-height:none}
+  .opt{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:8px;cursor:pointer;font-size:12.5px}
+  .opt:hover{background:var(--surface-2)}
+  .opt input{accent-color:var(--celeste);width:15px;height:15px;margin:0;flex-shrink:0}
+  .opt .opt__name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .opt .opt__n{font-size:11px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+  .opt.is-sel{background:var(--accent-soft)}
+  .chip{border:1.5px solid var(--border);background:var(--surface);border-radius:20px;padding:6px 12px;font-size:12px;font-weight:500;color:var(--ink-2);transition:all .12s}
+  .chip:hover{border-color:var(--border-strong)}
+  .chip[aria-pressed="true"]{background:var(--celeste);border-color:var(--celeste);color:#fff}
+
+  input.numin,input.datein{border:1.5px solid var(--border);border-radius:9px;padding:8px 11px;font-family:inherit;font-size:13px;color:var(--ink);background:var(--surface)}
+  input.numin:focus,input.datein:focus{outline:none;border-color:var(--celeste);box-shadow:0 0 0 3px var(--accent-soft)}
+  .numrange{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .numin{width:92px}
+  .datein{flex:1;min-width:130px}
+  .numrange__sep{color:var(--ink-3)}
+  .numrange__unit{font-size:12px;color:var(--ink-3)}
+  .presets{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+  .search-empty{padding:10px;color:var(--ink-3);font-size:12px;text-align:center}
+
+  /* dropdown multiselect */
+  .dd{position:relative}
+  .dd__control{width:100%;display:flex;align-items:center;gap:8px;min-height:40px;border:1.5px solid var(--border);border-radius:9px;background:var(--surface);padding:5px 10px;text-align:left}
+  .dd__control:hover{border-color:var(--border-strong)}
+  .dd__tags{flex:1;display:flex;flex-wrap:wrap;gap:5px;min-width:0}
+  .dd__ph{color:var(--ink-3);font-size:13px}
+  .dd__tag{display:inline-flex;align-items:center;gap:5px;background:var(--accent-soft);color:var(--azul);border-radius:15px;padding:3px 5px 3px 10px;font-size:11.5px;font-weight:600;max-width:190px}
+  .dd__tag span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dd__tag button{border:none;background:none;color:var(--azul);width:15px;height:15px;display:grid;place-items:center;border-radius:50%;font-size:12px;line-height:1}
+  .dd__tag button:hover{background:rgba(0,146,221,.18)}
+  .dd__chev{width:16px;height:16px;color:var(--ink-3);flex-shrink:0;transition:transform .15s}
+  .dd.open .dd__chev{transform:rotate(180deg)}
+  .dd__pop{position:absolute;z-index:15;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:11px;box-shadow:var(--shadow-md);padding:8px;max-height:290px;display:flex;flex-direction:column}
+  .dd__search{display:flex;align-items:center;gap:8px;border:1.5px solid var(--border);border-radius:8px;padding:0 9px;margin-bottom:6px}
+  .dd__search:focus-within{border-color:var(--celeste)}
+  .dd__search svg{width:14px;height:14px;color:var(--ink-3);flex-shrink:0}
+  .dd__search input{border:none;outline:none;background:none;padding:8px 0;font:inherit;font-size:13px;color:var(--ink);width:100%}
+  .dd__list{overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+
+  .adv-toggle{background:none;border:none;color:var(--azul);font-weight:600;font-size:12.5px;padding:4px 0;display:inline-flex;align-items:center;gap:6px;margin-top:18px}
+  .adv-toggle svg{width:14px;height:14px;transition:transform .2s}
+  .adv-toggle[aria-expanded="true"] svg{transform:rotate(90deg)}
+  .adv{margin-top:12px;padding-top:16px;border-top:1px dashed var(--border);display:flex;flex-direction:column;gap:18px}
+
+  .summary{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-top:18px;padding-top:14px;border-top:1px solid var(--border)}
+  .summary__none{color:var(--ink-3);font-size:12px;font-style:italic}
+  .tag{display:inline-flex;align-items:center;gap:6px;background:var(--surface-sunken);border:1px solid var(--border);border-radius:20px;padding:4px 6px 4px 11px;font-size:11.5px;font-weight:500;color:var(--ink);max-width:260px}
+  .tag span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tag b{font-weight:600;color:var(--azul)}
+  .tag button{background:none;border:none;color:var(--ink-3);width:17px;height:17px;border-radius:50%;display:grid;place-items:center;font-size:13px;line-height:1;flex-shrink:0}
+  .tag button:hover{background:var(--coral-soft);color:var(--coral)}
+  .clear-all{background:none;border:none;color:var(--coral);font-size:11.5px;font-weight:600;margin-left:auto}
+
+  .subject{position:relative}
+  .subject .count{position:absolute;right:4px;top:100%;margin-top:3px;font-size:10.5px;color:var(--ink-3)}
+  input.txt{width:100%;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 11px;font-family:inherit;font-size:13px;color:var(--ink);background:var(--surface)}
+  input.txt:focus{outline:none;border-color:var(--celeste);box-shadow:0 0 0 3px var(--accent-soft)}
+  .editor{border:1.5px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;margin-top:22px}
+  .editor__bar{display:flex;align-items:center;gap:3px;padding:7px 9px;background:var(--surface-2);border-bottom:1px solid var(--border);flex-wrap:wrap}
+  .editor__bar button{width:30px;height:30px;border:none;background:none;border-radius:7px;color:var(--ink-2);display:grid;place-items:center;font-size:14px}
+  .editor__bar button:hover{background:var(--surface-sunken);color:var(--ink)}
+  .editor__bar .sep{width:1px;height:18px;background:var(--border);margin:0 4px}
+  .editor__area{min-height:150px;padding:14px 16px;font-size:13.5px;color:var(--ink);outline:none}
+  .editor__area:empty::before{content:attr(data-ph);color:var(--ink-3)}
+
+  .rail{width:100%}
+  .rail__card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden}
+  .rail__hero{padding:18px 20px 16px;background:linear-gradient(150deg,var(--celeste),var(--azul));color:#fff}
+  .rail__eyebrow{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;opacity:.85;font-weight:600}
+  .rail__big{font-family:var(--font-display);font-weight:700;font-size:44px;line-height:1;margin:6px 0 2px;font-variant-numeric:tabular-nums}
+  .rail__sub{font-size:12px;opacity:.9}
+  .rail__body{padding:16px 18px 18px}
+  .reach__row{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;margin-bottom:7px}
+  .reach__row b{font-family:var(--font-display);font-size:17px;font-variant-numeric:tabular-nums}
+  .reach__ok b{color:var(--verde)}
+  .reach__no b{color:var(--coral)}
+  .bar{height:10px;border-radius:6px;background:var(--coral-soft);overflow:hidden;display:flex}
+  .bar__fill{background:var(--verde);height:100%;transition:width .4s cubic-bezier(.2,.7,.2,1)}
+  .reach__note{font-size:11px;color:var(--ink-2);margin-top:8px;display:flex;gap:7px;align-items:flex-start}
+  .reach__note svg{width:14px;height:14px;flex-shrink:0;color:var(--verde);margin-top:1px}
+  .send{margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}
+  .btn-send{width:100%;border:none;border-radius:11px;padding:13px;background:var(--celeste);color:#fff;font-family:var(--font-display);font-weight:600;font-size:15px;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 6px 16px rgba(0,146,221,.32);transition:transform .1s,box-shadow .15s,background .15s}
+  .btn-send:hover:not(:disabled){background:var(--azul);transform:translateY(-1px)}
+  .btn-send:disabled{background:var(--border-strong);color:var(--surface);box-shadow:none;cursor:not-allowed;transform:none}
+  .btn-send svg{width:18px;height:18px}
+  .send__meta{text-align:center;font-size:11px;color:var(--ink-3);margin-top:8px}
+
+  .prog{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px}
+  .prog__pct{font-family:var(--font-display);font-weight:700;font-size:32px;font-variant-numeric:tabular-nums}
+  .prog__rate{font-size:11.5px;color:var(--ink-3)}
+  .progbar{height:12px;border-radius:7px;background:var(--surface-sunken);overflow:hidden}
+  .progbar__fill{height:100%;border-radius:7px;background:linear-gradient(90deg,var(--celeste),var(--verde));width:0;transition:width .3s linear}
+  .progbar.done .progbar__fill{background:var(--verde)}
+  .stats3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}
+  .stat{border:1px solid var(--border);border-radius:11px;padding:12px 10px;text-align:center}
+  .stat b{display:block;font-family:var(--font-display);font-size:22px;font-variant-numeric:tabular-nums}
+  .stat span{font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3)}
+  .stat--ok b{color:var(--verde)} .stat--ok{background:var(--verde-soft);border-color:transparent}
+  .stat--fail b{color:var(--coral)}
+  .stat--queue b{color:var(--ink-2)}
+  .send-actions{display:flex;gap:8px;margin-top:14px}
+  .send-actions button{flex:1;border-radius:9px;padding:10px;font-weight:600;font-size:12.5px;font-family:var(--font-display)}
+  .send-actions [hidden]{display:none}
+  .btn-ghost2{background:var(--surface-2);border:1px solid var(--border);color:var(--ink-2)}
+  .btn-ghost2:hover{background:var(--surface-sunken)}
+  .btn-primary2{background:var(--celeste);border:none;color:#fff}
+  .btn-primary2:hover{background:var(--azul)}
+
+  /* costo whatsapp */
+  .cost-wa{margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+  .cost-wa__head{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--verde);margin-bottom:10px}
+  .cost-wa__head svg{width:15px;height:15px}
+  .cost-wa__total{display:flex;align-items:baseline;justify-content:space-between}
+  .cost-wa__total span{font-size:12.5px;color:var(--ink-2)}
+  .cost-wa__total b{font-family:var(--font-display);font-weight:700;font-size:26px;color:var(--ink);font-variant-numeric:tabular-nums}
+  .cost-wa__meta{font-size:11.5px;color:var(--ink-3);margin-top:2px}
+  .cost-wa__by{margin-top:12px;display:flex;flex-direction:column;gap:6px}
+  .cw-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:baseline;font-size:12px}
+  .cw-row .cw-name{color:var(--ink-2)}
+  .cw-row .cw-name small{color:var(--ink-3);font-size:10.5px}
+  .cw-row b{font-variant-numeric:tabular-nums;font-weight:600}
+
+  /* stripe checkout (demo) */
+  .pay{position:fixed;inset:0;background:rgba(10,25,35,.6);backdrop-filter:blur(4px);display:none;place-items:center;z-index:100;padding:18px}
+  .pay.show{display:grid}
+  .pay__card{background:var(--surface);border-radius:18px;width:100%;max-width:420px;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.4)}
+  .pay__bar{background:#635BFF;color:#fff;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:600}
+  .pay__bar .lock{display:flex;align-items:center;gap:7px}
+  .pay__bar .lock svg{width:15px;height:15px}
+  .pay__demo{background:rgba(255,255,255,.22);border-radius:20px;padding:3px 9px;font-size:10px;letter-spacing:.05em}
+  .pay__body{padding:20px}
+  .pay__merchant{font-size:12px;color:var(--ink-3)}
+  .pay__amount{font-family:var(--font-display);font-weight:700;font-size:34px;margin:2px 0 4px;font-variant-numeric:tabular-nums}
+  .pay__line{font-size:12.5px;color:var(--ink-2);margin-bottom:10px}
+  .pay__break{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+  .pay__break .pb-row{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-2)}
+  .pay__break .pb-row b{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600}
+  .pay__break .pb-note{font-size:10.5px;color:var(--ink-3);margin-top:3px;display:flex;align-items:center;gap:5px}
+  .pay__break .pb-note svg{width:12px;height:12px}
+  .pay__fieldlabel{font-size:11.5px;font-weight:600;color:var(--ink-2);margin-bottom:6px;display:block}
+  .pay__card-input{display:flex;align-items:center;gap:10px;border:1.5px solid var(--border);border-radius:9px;padding:11px 12px;font-size:13.5px;color:var(--ink);background:var(--surface);font-variant-numeric:tabular-nums}
+  .pay__card-input svg{width:22px;height:15px;color:#635BFF;flex-shrink:0}
+  .pay__card-input .num{flex:1;letter-spacing:.05em}
+  .pay__card-input .mm,.pay__card-input .cvc{color:var(--ink-3)}
+  .pay__pin{font-size:10.5px;color:var(--ink-3);margin-top:8px;line-height:1.5}
+  .pay__pay{width:100%;margin-top:16px;border:none;border-radius:10px;padding:13px;background:#635BFF;color:#fff;font-family:var(--font-display);font-weight:600;font-size:15px;display:flex;align-items:center;justify-content:center;gap:9px}
+  .pay__pay:hover{background:#5249e0}
+  .pay__pay:disabled{opacity:.75;cursor:default}
+  .pay__cancel{width:100%;margin-top:8px;border:none;background:none;color:var(--ink-3);font-size:12.5px;font-weight:600;padding:6px}
+  .pay__spin{width:17px;height:17px;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:paySpin .7s linear infinite}
+  @keyframes paySpin{to{transform:rotate(360deg)}}
+  .pay__done{text-align:center;padding:26px 20px}
+  .pay__done .ok{width:56px;height:56px;border-radius:50%;background:var(--verde-soft);color:var(--verde);display:grid;place-items:center;margin:0 auto 12px}
+  .pay__done .ok svg{width:30px;height:30px}
+  .pay__done h3{font-size:18px;margin-bottom:4px}
+  .pay__done p{font-size:13px;color:var(--ink-2)}
+
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);opacity:0;background:var(--ink);color:#fff;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:500;box-shadow:var(--shadow-md);transition:opacity .25s,transform .25s;z-index:90;display:flex;align-items:center;gap:9px}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast svg{width:18px;height:18px;color:#4fd07f}
+
+  @media (max-width:900px){.nav{display:none}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="app">
+  <aside class="nav">
+    <div class="nav__brand">
+      <span style="font-family:var(--font-display);font-weight:700;font-size:26px;letter-spacing:.02em;color:#fff;display:inline-flex;align-items:center;gap:1px">TECH<span style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px">O<svg viewBox="0 0 24 24" width="11" height="11" style="position:absolute;top:5px" fill="none" stroke="var(--amarillo)" stroke-width="3"><path d="M4 13L12 5l8 8"/></svg></span></span>
+    </div>
+    <div class="nav__user">
+      <div class="nav__avatar">DS</div>
+      <div><b>Dara Sanabria</b><div class="nav__role">admin</div></div>
+    </div>
+    <nav class="nav__menu">
+      <div class="nav__label">MENÚ</div>
+      <a class="nav__item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Actividades</a>
+      <a class="nav__item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Equipos</a>
+      <a class="nav__item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>Comunidades</a>
+      <a class="nav__item is-active" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>Comunicaciones</a>
+      <div class="nav__sub">
+        <a href="index.html" class="is-active">Nueva comunicación</a>
+        <a href="comunicaciones-enviadas.html">Comunicaciones enviadas</a>
+      </div>
+      <a class="nav__item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>Campañas</a>
+      <a class="nav__item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>Personas</a>
+      <a class="nav__item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>Estadísticas</a>
+      <a class="nav__item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14 2h-4l-.6 2.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12a7 7 0 0 0 .1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L10 22h4l.6-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5A7 7 0 0 0 19 12z"/></svg>Configuración</a>
+      <a class="nav__item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></svg>Reportes</a>
+      <a class="nav__item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></svg>Ayuda</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar__left">
+        <button class="burger" aria-label="Menú"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+        <span class="topbar__title">Comunicaciones</span>
+      </div>
+      <div class="topbar__right">
+        <button class="theme-toggle" id="themeBtn" aria-label="Cambiar tema"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+        <span>Dara Sanabria</span>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="page-head">
+        <h1>Nueva comunicación</h1>
+        <p>Armá el segmento cruzando perfil, datos de la persona e historial de movilización. El alcance se recalcula en vivo a medida que filtrás.</p>
+      </div>
+
+      <div class="top-row">
+          <!-- Step 1 -->
+          <section class="step">
+            <div class="step__head">
+              <div class="step__num">1</div>
+              <div class="step__titles"><h2>Objetivo y canal</h2><p>Qué querés comunicar y por dónde. Un canal por envío.</p></div>
+            </div>
+            <div class="step__body">
+              <label class="field-label">Objetivo</label>
+              <div class="optrow" style="margin-bottom:16px">
+                <button class="optcard" aria-pressed="true" data-group="objetivo" data-val="actividad">
+                  <span class="optcard__check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>
+                  <div class="optcard__ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M9 15l2 2 4-4"/></svg></div>
+                  <b>Actividad</b><span>Invitar a una actividad</span>
+                </button>
+                <button class="optcard" aria-pressed="false" data-group="objetivo" data-val="comunicacion">
+                  <span class="optcard__check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>
+                  <div class="optcard__ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11a9 9 0 0 1 9-9M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1.6"/></svg></div>
+                  <b>Comunicación masiva</b><span>Informar y posicionar</span>
+                </button>
+                <button class="optcard" aria-pressed="false" disabled data-group="objetivo" data-val="campana">
+                  <span class="optcard__soon">Próximamente</span>
+                  <div class="optcard__ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></div>
+                  <b>Campaña</b><span>Difundir o captar</span>
+                </button>
+              </div>
+              <label class="field-label">Canal</label>
+              <div class="optrow" id="canalRow">
+                <button class="optcard" aria-pressed="false" data-group="canal" data-val="push">
+                  <span class="optcard__check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>
+                  <div class="optcard__ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg></div>
+                  <b>Push</b><span>Notificación en la app</span>
+                </button>
+                <button class="optcard" aria-pressed="true" data-group="canal" data-val="email">
+                  <span class="optcard__check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>
+                  <div class="optcard__ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 6 10-6"/></svg></div>
+                  <b>Email</b><span>Correo con formato</span>
+                </button>
+                <button class="optcard" aria-pressed="false" data-group="canal" data-val="whatsapp">
+                  <span class="optcard__check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>
+                  <div class="optcard__ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 21l2.1-5.3A8.5 8.5 0 1 1 21 11.5z"/></svg></div>
+                  <b>WhatsApp</b><span>Mensaje directo</span>
+                </button>
+              </div>
+              <div class="callout">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                <span>Se envía solo a quienes <b>aceptaron recibir por ese canal</b>. El sistema no exporta ni comparte datos de contacto.</span>
+              </div>
+            </div>
+          </section>
+
+          <aside class="rail">
+            <div class="rail__card">
+              <div class="rail__hero">
+                <div class="rail__eyebrow" id="railEyebrow">Audiencia estimada</div>
+                <div class="rail__big tnum" id="segTotal">0</div>
+                <div class="rail__sub" id="segSub">personas en el segmento</div>
+              </div>
+              <div class="rail__body" id="railEstimate">
+                <div class="reach">
+                  <div class="reach__row reach__ok"><span>Contactables por <span id="canalName">email</span></span><b class="tnum" id="reachOk">0</b></div>
+                  <div class="bar"><div class="bar__fill" id="reachBar" style="width:0%"></div></div>
+                  <div class="reach__row reach__no" style="margin-top:8px"><span>Sin consentimiento del canal</span><b class="tnum" id="reachNo">0</b></div>
+                  <div class="reach__note">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+                    <span>Solo llega a quien aceptó recibir por este canal.</span>
+                  </div>
+                </div>
+                <div class="cost-wa" id="costWa" hidden>
+                  <div class="cost-wa__head">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 21l2.1-5.3A8.5 8.5 0 1 1 21 11.5z"/></svg>
+                    Costo del envío por WhatsApp
+                  </div>
+                  <div class="cost-wa__total"><span>Total estimado</span><b class="tnum" id="waTotal">US$ 0,00</b></div>
+                  <div class="cost-wa__meta" id="waMeta">0 mensajes</div>
+                  <div class="cost-wa__by" id="waByCountry"></div>
+                  <div class="reach__note" style="color:var(--ink-2)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                    <span>La tarifa varía por país (conversación de marketing de Meta). Se cobra con Stripe antes de disparar.</span>
+                  </div>
+                </div>
+                <div class="send">
+                  <button class="btn-send" id="sendBtn" disabled>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>
+                    Confirmar y enviar
+                  </button>
+                  <div class="send__meta" id="sendMeta">Elegí canal y completá el asunto para habilitar el envío.</div>
+                </div>
+              </div>
+              <div class="rail__body" id="railSending" hidden>
+                <div class="prog"><span class="prog__pct tnum" id="progPct">0%</span><span class="prog__rate" id="progRate"></span></div>
+                <div class="progbar" id="progbar"><div class="progbar__fill" id="progFill"></div></div>
+                <div class="stats3">
+                  <div class="stat stat--ok"><b class="tnum" id="stSent">0</b><span>Enviados</span></div>
+                  <div class="stat stat--fail"><b class="tnum" id="stFail">0</b><span>Fallidos</span></div>
+                  <div class="stat stat--queue"><b class="tnum" id="stQueue">0</b><span>En cola</span></div>
+                </div>
+                <div class="reach__note" style="margin-top:14px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg><span>Envío gradual para no ser marcado como spam.</span></div>
+                <div class="send-actions">
+                  <button class="btn-ghost2" id="sendBgBtn" hidden>Segundo plano</button>
+                  <button class="btn-primary2" id="sendCloseBtn" hidden>Cerrar</button>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+
+          <!-- Step 2 -->
+          <section class="step">
+            <div class="step__head">
+              <div class="step__num">2</div>
+              <div class="step__titles"><h2>Audiencia</h2><p>Definí a quién le llega cruzando tantos filtros como necesites.</p></div>
+            </div>
+            <div class="step__body">
+              <label class="field-label">Tipo de perfil <span style="font-weight:400;color:var(--ink-3)">· elegí una o más poblaciones</span></label>
+              <div class="perfil-grid" id="perfilGrid">
+                <button class="perfil" aria-pressed="true" data-perfil="voluntariado">
+                  <span class="perfil__dot" style="background:var(--celeste)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+                  <span class="perfil__txt"><b>Voluntariado</b><span>Base movilizada</span></span>
+                  <span class="perfil__count" data-pc="voluntariado">0</span>
+                </button>
+                <button class="perfil" aria-pressed="false" data-perfil="equipofijo">
+                  <span class="perfil__dot" style="background:var(--verde)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7h-4V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/></svg></span>
+                  <span class="perfil__txt"><b>Equipo fijo</b><span>Rol estable</span></span>
+                  <span class="perfil__count" data-pc="equipofijo">0</span>
+                </button>
+                <button class="perfil" aria-pressed="false" data-perfil="coordinador">
+                  <span class="perfil__dot" style="background:var(--violeta)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 14.9 7.2 17l.9-5.4L4.2 7.7l5.4-.8z"/></svg></span>
+                  <span class="perfil__txt"><b>Coordinadores</b><span>Lideran equipos</span></span>
+                  <span class="perfil__count" data-pc="coordinador">0</span>
+                </button>
+                <button class="perfil" aria-pressed="false" data-perfil="administrador">
+                  <span class="perfil__dot" style="background:var(--azul)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+                  <span class="perfil__txt"><b>Administradores</b><span>Acceso plataforma</span></span>
+                  <span class="perfil__count" data-pc="administrador">0</span>
+                </button>
+              </div>
+
+              <div class="facets" style="margin-top:18px">
+                <div class="facet facet--base" id="facetBaseVol" hidden>
+                  <div class="facet__head"><b>Base de voluntariado</b><span class="mini">movilizada, socios, histórica, alumni</span></div>
+                  <div class="opts chips" data-facet="baseVol"></div>
+                </div>
+                <div class="facet facet--equipo" id="facetEquipo" hidden>
+                  <div class="facet__head"><b>Equipo</b><span class="mini">a qué equipo pertenece el equipo fijo</span></div>
+                  <div class="opts chips" data-facet="equipo"></div>
+                </div>
+
+                <div class="facet">
+                  <div class="facet__head"><b>Cantidad de participaciones</b></div>
+                  <div class="numrange">
+                    <input type="number" class="numin" id="partMin" placeholder="Desde" min="0" />
+                    <span class="numrange__sep">—</span>
+                    <input type="number" class="numin" id="partMax" placeholder="Hasta" min="0" />
+                    <span class="numrange__unit">part.</span>
+                  </div>
+                  <div class="presets"><button class="chip" id="nuncaChip">Nunca participó</button></div>
+                </div>
+
+                <div class="facet">
+                  <div class="facet__head"><b>Rango etario</b></div>
+                  <div class="numrange">
+                    <input type="number" class="numin" id="edadMin" placeholder="Desde" min="14" max="99" />
+                    <span class="numrange__sep">—</span>
+                    <input type="number" class="numin" id="edadMax" placeholder="Hasta" min="14" max="99" />
+                    <span class="numrange__unit">años</span>
+                  </div>
+                </div>
+
+                <div class="facet facet--full">
+                  <div class="facet__head"><b>Última movilización</b><span class="mini">rango de fechas</span></div>
+                  <div class="numrange">
+                    <input type="date" class="datein" id="fDesde" aria-label="Desde" />
+                    <span class="numrange__sep">—</span>
+                    <input type="date" class="datein" id="fHasta" aria-label="Hasta" />
+                  </div>
+                </div>
+
+                <div class="facet">
+                  <div class="facet__head"><b>Género</b></div>
+                  <div class="dd" id="ddGenero"></div>
+                </div>
+
+                <div class="facet">
+                  <div class="facet__head"><b>Sede / Ciudad</b></div>
+                  <div class="dd" id="ddSede"></div>
+                </div>
+              </div>
+
+              <button class="adv-toggle" id="advToggle" aria-expanded="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+                Filtros opcionales: actividades y universidad
+              </button>
+              <div class="adv" id="advPanel" hidden>
+                <div class="facet">
+                  <div class="facet__head"><b>Tipo de actividad</b><span class="mini" id="tipoMini"></span></div>
+                  <div class="dd" id="ddTipo"></div>
+                </div>
+                <div class="facet">
+                  <div class="facet__head"><b>Actividad</b><span class="mini" id="actMini"></span></div>
+                  <div class="dd" id="ddActividad"></div>
+                </div>
+                <div class="facet">
+                  <div class="facet__head"><b>Universidad</b></div>
+                  <div class="dd" id="ddUniversidad"></div>
+                </div>
+              </div>
+
+              <div class="summary" id="summary">
+                <span class="summary__none">Sin filtros: la comunicación llega a toda la población de perfil seleccionada.</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Step 3 -->
+          <section class="step">
+            <div class="step__head">
+              <div class="step__num">3</div>
+              <div class="step__titles"><h2>Mensaje</h2><p id="step3sub">El correo se envía con el logo de TECHO y un botón a la actividad.</p></div>
+            </div>
+            <div class="step__body">
+              <label class="field-label" for="asunto">Asunto</label>
+              <div class="subject">
+                <input class="txt" id="asunto" maxlength="150" placeholder="Ej.: Sumate a la construcción de este finde" />
+                <span class="count"><span id="asuntoN">0</span>/150</span>
+              </div>
+              <div class="editor">
+                <div class="editor__bar">
+                  <button title="Deshacer">↺</button><button title="Rehacer">↻</button>
+                  <span class="sep"></span>
+                  <button title="Negrita" style="font-weight:700">B</button><button title="Itálica" style="font-style:italic">I</button>
+                  <span class="sep"></span>
+                  <button title="Alinear izquierda"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h12M3 18h15"/></svg></button>
+                  <button title="Centrar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M6 12h12M4 18h16"/></svg></button>
+                  <span class="sep"></span>
+                  <button title="Lista"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></button>
+                  <button title="Enlace"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg></button>
+                  <button title="Imagen"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>
+                </div>
+                <div class="editor__area" contenteditable="true" data-ph="Escribí el mensaje… Podés dar formato, agregar enlaces e imágenes."></div>
+              </div>
+            </div>
+          </section>
+    </main>
+  </div>
+</div>
+
+<div class="pay" id="pay">
+  <div class="pay__card">
+    <div class="pay__bar"><span class="lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Pago seguro · Stripe</span><span class="pay__demo">DEMO</span></div>
+    <div class="pay__body" id="payForm">
+      <div class="pay__merchant">TECHO · Cuenta central de campañas</div>
+      <div class="pay__amount tnum" id="payAmount">US$ 0,00</div>
+      <div class="pay__line" id="payLine">0 mensajes</div>
+      <div class="pay__break" id="payBreak"></div>
+      <label class="pay__fieldlabel">Datos de la tarjeta</label>
+      <div class="pay__card-input">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+        <span class="num">4242 4242 4242 4242</span><span class="mm">12 / 28</span><span class="cvc">123</span>
+      </div>
+      <div class="pay__pin">Los datos de la tarjeta los procesa Stripe, no el sistema. Tarjeta de prueba precargada — esta es una demostración y no realiza cobros reales.</div>
+      <button class="pay__pay" id="payBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span id="payBtnTxt">Pagar</span></button>
+      <button class="pay__cancel" id="payCancel">Cancelar</button>
+    </div>
+    <div class="pay__done" id="payDone" hidden>
+      <div class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></div>
+      <h3>Pago aprobado</h3>
+      <p id="payDoneMsg">Iniciando el envío…</p>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg><span id="toastMsg"></span></div>
+
+<script>
+const root=document.documentElement;
+document.getElementById('themeBtn').addEventListener('click',()=>{const c=root.getAttribute('data-theme');const d=c?c==='dark':matchMedia('(prefers-color-scheme:dark)').matches;root.setAttribute('data-theme',d?'light':'dark');});
+
+/* ---------- data ---------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const rnd=mulberry32(20260922);
+const pick=arr=>arr[Math.floor(rnd()*arr.length)];
+const chance=p=>rnd()<p;
+const TODAY=new Date(2026,8,22); const DAY=86400000;
+
+const SEDES=['CABA','La Plata','Córdoba','Rosario','Santiago','Valparaíso','Montevideo','Lima','Bogotá','Medellín','CDMX','Guadalajara'];
+const SEDE_COUNTRY={'CABA':'Argentina','La Plata':'Argentina','Córdoba':'Argentina','Rosario':'Argentina','Santiago':'Chile','Valparaíso':'Chile','Montevideo':'Uruguay','Lima':'Perú','Bogotá':'Colombia','Medellín':'Colombia','CDMX':'México','Guadalajara':'México'};
+/* tarifa de conversación de marketing de WhatsApp por país (USD, valores de ejemplo — verificar tarifario vigente de Meta) */
+const COUNTRY_RATE={'Argentina':0.0618,'Chile':0.0889,'Uruguay':0.0730,'Perú':0.0703,'Colombia':0.0125,'México':0.0436};
+const UNIS=['UBA','UCA','UTDT','ITBA','UNLP','UNC','Universidad de Chile','PUC','UdelaR','PUCP','U. de los Andes','UNAM','UP','Siglo 21','Sin universidad'];
+const EQUIPOS=['Formación','Comunicación','Desarrollo de fondos','Detección','Construcción','Administración y Finanzas','Voluntariado'];
+const BASES_VOL=['Movilizada','Socios','Base histórica','Alumnis'];
+const GENEROS=[['f','Mujer'],['m','Varón'],['nb','No binario'],['nd','Sin dato']];
+
+const AREAS=['Construcción','Colecta','Detección','Mesa de trabajo','Agua y saneamiento','Formación','Diagnóstico','Relevamiento','Voluntariado corporativo','Difusión','Capacitación','Asamblea','Campaña','Jornada comunitaria','Infraestructura','Mejoramiento de vivienda'];
+const QUALS=['Nacional','Regional','Invierno','Verano','Emergencia','Comunitaria','Universitaria','Empresas','Barrial','Piloto','Federal','Express'];
+let TIPOS=[];
+AREAS.forEach((a,i)=>{const qn=3+(i%2);for(let k=0;k<qn;k++)TIPOS.push(a+' · '+QUALS[(i*3+k)%QUALS.length]);});
+TIPOS=[...new Set(TIPOS)].slice(0,52);
+
+const MESES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const ACT_BY_TIPO={},ACT_TIPO={},ALL_ACTS=[];
+TIPOS.forEach((t,ti)=>{const area=t.split(' · ')[0];const n=2+(ti%4);const arr=[];
+  for(let k=0;k<n;k++){let name=area+' '+SEDES[(ti+k)%SEDES.length]+' · '+MESES[(ti*2+k)%12]+' '+(2024+((ti+k)%3));if(ACT_TIPO[name])name+=' #'+ti;arr.push(name);ACT_TIPO[name]=t;ALL_ACTS.push(name);}
+  ACT_BY_TIPO[t]=arr;});
+
+function makePerson(){
+  const r=rnd(); let perfil='voluntariado';
+  if(r>0.995)perfil='administrador';else if(r>0.95)perfil='coordinador';else if(r>0.87)perfil='equipofijo';
+  const sede=pick(SEDES);
+  let edad=16+Math.floor(rnd()*rnd()*38); if((perfil==='equipofijo'||perfil==='administrador')&&edad<24)edad+=6;
+  const genero=pick(GENEROS)[0];
+  const uni=edad<30?pick(UNIS):(chance(.4)?pick(UNIS):'Sin universidad');
+  const equipo=perfil==='equipofijo'?pick(EQUIPOS):null;
+  let baseTipos=[];
+  if(perfil==='voluntariado'){ if(chance(.70))baseTipos.push('Movilizada'); if(chance(.25))baseTipos.push('Socios'); if(chance(.30))baseTipos.push('Base histórica'); if(chance(.20))baseTipos.push('Alumnis'); if(!baseTipos.length)baseTipos.push('Movilizada'); }
+  let partCount;
+  if(perfil==='voluntariado')partCount=chance(0.14)?0:1+Math.floor(rnd()*rnd()*22);
+  else if(perfil==='coordinador')partCount=8+Math.floor(rnd()*rnd()*70);
+  else if(perfil==='equipofijo')partCount=15+Math.floor(rnd()*rnd()*85);
+  else partCount=10+Math.floor(rnd()*45);
+  let acts=[],tipos=[],lastDate=null;
+  if(partCount>0){
+    const nT=1+Math.floor(rnd()*3); tipos=[...new Set(Array.from({length:nT},()=>pick(TIPOS)))];
+    const pool=tipos.flatMap(t=>ACT_BY_TIPO[t]); const nA=Math.min(pool.length,1+Math.floor(rnd()*4));
+    acts=[...new Set(Array.from({length:nA},()=>pick(pool)))]; tipos=[...new Set(acts.map(a=>ACT_TIPO[a]))];
+    lastDate=new Date(TODAY-Math.floor(rnd()*rnd()*1000)*DAY);
+  }
+  const emailC=chance(perfil==='voluntariado'?0.72:0.9), pushC=chance(perfil==='voluntariado'?0.58:0.8), waC=chance(perfil==='voluntariado'?0.4:0.65);
+  return {perfil,sede,pais:SEDE_COUNTRY[sede],edad,genero,uni,equipo,baseTipos,partCount,acts,tipos,lastDate,consent:{email:emailC,push:pushC,whatsapp:waC}};
+}
+const DATA=Array.from({length:2600},makePerson);
+
+/* ---------- state ---------- */
+const state={
+  objetivo:'actividad', canal:'email', perfiles:new Set(['voluntariado']),
+  equipo:new Set(), baseVol:new Set(), sede:new Set(), genero:new Set(), universidad:new Set(), tipo:new Set(), actividad:new Set(),
+  edadMin:null, edadMax:null, partMin:null, partMax:null, fDesde:null, fHasta:null,
+  sending:false,
+  q:{genero:'',sede:'',tipo:'',actividad:'',universidad:''}
+};
+function passes(p,except){
+  if(!state.perfiles.has(p.perfil))return false;
+  if(state.equipo.size&&p.perfil==='equipofijo'&&!state.equipo.has(p.equipo))return false;
+  if(state.baseVol.size&&p.perfil==='voluntariado'&&!p.baseTipos.some(t=>state.baseVol.has(t)))return false;
+  if(except!=='sede'&&state.sede.size&&!state.sede.has(p.sede))return false;
+  if(except!=='genero'&&state.genero.size&&!state.genero.has(p.genero))return false;
+  if(except!=='universidad'&&state.universidad.size&&!state.universidad.has(p.uni))return false;
+  if(except!=='tipo'&&state.tipo.size&&!p.tipos.some(t=>state.tipo.has(t)))return false;
+  if(except!=='actividad'&&state.actividad.size&&!p.acts.some(a=>state.actividad.has(a)))return false;
+  if(state.edadMin!=null&&p.edad<state.edadMin)return false;
+  if(state.edadMax!=null&&p.edad>state.edadMax)return false;
+  if(state.partMin!=null&&p.partCount<state.partMin)return false;
+  if(state.partMax!=null&&p.partCount>state.partMax)return false;
+  if(state.fDesde&&(!p.lastDate||p.lastDate<state.fDesde))return false;
+  if(state.fHasta&&(!p.lastDate||p.lastDate>state.fHasta))return false;
+  return true;
+}
+function facetCounts(exceptKey,get,multi){const m={};for(const p of DATA){if(!passes(p,exceptKey))continue;const vals=multi?get(p):[get(p)];for(const v of vals)if(v!=null)m[v]=(m[v]||0)+1;}return m;}
+function toggleSet(s,v){s.has(v)?s.delete(v):s.add(v);}
+
+/* ---------- chips (equipo) ---------- */
+function buildEquipo(){
+  const cont=document.querySelector('[data-facet="equipo"]'); const counts=facetCounts('equipo',p=>p.equipo,false); cont.innerHTML='';
+  EQUIPOS.forEach(v=>{const active=state.equipo.has(v);const n=counts[v]||0;const b=document.createElement('button');b.className='chip';b.setAttribute('aria-pressed',active);b.textContent=v+(n?` · ${n.toLocaleString('es')}`:'');b.onclick=()=>{toggleSet(state.equipo,v);render();};cont.appendChild(b);});
+}
+function buildBaseVol(){
+  const cont=document.querySelector('[data-facet="baseVol"]'); const counts=facetCounts('baseVol',p=>p.baseTipos,true); cont.innerHTML='';
+  BASES_VOL.forEach(v=>{const active=state.baseVol.has(v);const n=counts[v]||0;const b=document.createElement('button');b.className='chip';b.setAttribute('aria-pressed',active);b.textContent=v+(n?` · ${n.toLocaleString('es')}`:'');b.onclick=()=>{toggleSet(state.baseVol,v);render();};cont.appendChild(b);});
+}
+
+/* ---------- dropdown multiselect ---------- */
+const dropdowns={};
+function initDropdown(containerId,key,cfg){
+  const cont=document.getElementById(containerId); cont.classList.add('dd');
+  cont.innerHTML=`<button type="button" class="dd__control"><span class="dd__tags"></span><svg class="dd__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button><div class="dd__pop" hidden>${cfg.searchable?`<div class="dd__search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input placeholder="${cfg.searchPh||'Buscar…'}"></div>`:''}<div class="dd__list"></div></div>`;
+  const control=cont.querySelector('.dd__control'), pop=cont.querySelector('.dd__pop');
+  control.addEventListener('click',e=>{e.stopPropagation();const willOpen=pop.hidden;closeAllDropdowns();if(willOpen){pop.hidden=false;cont.classList.add('open');const inp=pop.querySelector('input');if(inp)setTimeout(()=>inp.focus(),0);}});
+  pop.addEventListener('click',e=>e.stopPropagation());
+  if(cfg.searchable){const inp=pop.querySelector('input');inp.addEventListener('input',()=>{state.q[key]=inp.value;updateDropdown(key);});}
+  dropdowns[key]={cont,control,pop,cfg};
+}
+function closeAllDropdowns(){Object.values(dropdowns).forEach(d=>{d.pop.hidden=true;d.cont.classList.remove('open');});}
+document.addEventListener('click',closeAllDropdowns);
+function updateDropdown(key){
+  const d=dropdowns[key];if(!d)return;const cfg=d.cfg;
+  const options=typeof cfg.options==='function'?cfg.options():cfg.options;
+  const counts=facetCounts(key,cfg.getVals,cfg.multi);
+  const sel=state[key];
+  const tagsEl=d.control.querySelector('.dd__tags');
+  if(sel.size===0){tagsEl.innerHTML=`<span class="dd__ph">${cfg.placeholder}</span>`;}
+  else{tagsEl.innerHTML='';[...sel].forEach(v=>{const label=(options.find(o=>o[0]===v)||[v,v])[1];const t=document.createElement('span');t.className='dd__tag';t.innerHTML=`<span>${label}</span><button aria-label="Quitar">×</button>`;t.querySelector('button').addEventListener('click',e=>{e.stopPropagation();sel.delete(v);render();});tagsEl.appendChild(t);});}
+  const q=(state.q[key]||'').toLowerCase();
+  const listEl=d.pop.querySelector('.dd__list');
+  let opts=options.filter(([v,l])=>sel.has(v)||l.toLowerCase().includes(q));
+  opts.sort((a,b)=>(sel.has(b[0])-sel.has(a[0]))||((counts[b[0]]||0)-(counts[a[0]]||0)));
+  const capped=opts.slice(0,60); listEl.innerHTML='';
+  if(!capped.length){listEl.innerHTML='<div class="search-empty">Sin coincidencias</div>';}
+  capped.forEach(([v,l])=>{const active=sel.has(v);const n=counts[v]||0;const lab=document.createElement('label');lab.className='opt'+(active?' is-sel':'');lab.innerHTML=`<input type="checkbox" ${active?'checked':''}><span class="opt__name" title="${l}">${l}</span><span class="opt__n tnum">${n.toLocaleString('es')}</span>`;lab.querySelector('input').addEventListener('change',()=>{sel.has(v)?sel.delete(v):sel.add(v);render();});listEl.appendChild(lab);});
+}
+initDropdown('ddGenero','genero',{searchable:false,placeholder:'Todos los géneros',options:GENEROS,getVals:p=>p.genero,multi:false});
+initDropdown('ddSede','sede',{searchable:true,searchPh:'Buscar sede…',placeholder:'Todas las sedes',options:()=>SEDES.map(s=>[s,s]),getVals:p=>p.sede,multi:false});
+initDropdown('ddTipo','tipo',{searchable:true,searchPh:`Buscar entre ${TIPOS.length} tipos…`,placeholder:'Todos los tipos',options:()=>TIPOS.map(t=>[t,t]),getVals:p=>p.tipos,multi:true});
+initDropdown('ddActividad','actividad',{searchable:true,searchPh:'Buscar actividad…',placeholder:'Todas las actividades',options:()=>(state.tipo.size?[...state.tipo].flatMap(t=>ACT_BY_TIPO[t]):ALL_ACTS).map(a=>[a,a]),getVals:p=>p.acts,multi:true});
+initDropdown('ddUniversidad','universidad',{searchable:true,searchPh:'Buscar universidad…',placeholder:'Todas las universidades',options:()=>UNIS.map(u=>[u,u]),getVals:p=>p.uni,multi:false});
+
+/* ---------- numeric ranges ---------- */
+function wireNum(minId,maxId,minKey,maxKey){const a=document.getElementById(minId),b=document.getElementById(maxId);const upd=()=>{state[minKey]=a.value===''?null:+a.value;state[maxKey]=b.value===''?null:+b.value;render();};a.addEventListener('input',upd);b.addEventListener('input',upd);}
+wireNum('edadMin','edadMax','edadMin','edadMax');
+wireNum('partMin','partMax','partMin','partMax');
+function setPart(minV,maxV){document.getElementById('partMin').value=minV===''?'':minV;document.getElementById('partMax').value=maxV===''?'':maxV;state.partMin=minV===''?null:+minV;state.partMax=maxV===''?null:+maxV;render();}
+document.getElementById('nuncaChip').addEventListener('click',()=>{const on=state.partMin===0&&state.partMax===0;on?setPart('',''):setPart(0,0);});
+
+/* ---------- date range ---------- */
+const fDesdeEl=document.getElementById('fDesde'),fHastaEl=document.getElementById('fHasta');
+function updDates(){state.fDesde=fDesdeEl.value?new Date(fDesdeEl.value+'T00:00:00'):null;state.fHasta=fHastaEl.value?new Date(fHastaEl.value+'T23:59:59'):null;render();}
+fDesdeEl.addEventListener('input',updDates);fHastaEl.addEventListener('input',updDates);
+
+/* ---------- perfil + canal + asunto ---------- */
+document.getElementById('perfilGrid').addEventListener('click',e=>{const btn=e.target.closest('.perfil');if(!btn)return;const v=btn.dataset.perfil;if(state.perfiles.has(v)){if(state.perfiles.size>1)state.perfiles.delete(v);}else state.perfiles.add(v);if(!state.perfiles.has('equipofijo'))state.equipo.clear();if(!state.perfiles.has('voluntariado'))state.baseVol.clear();render();});
+document.querySelectorAll('[data-group="canal"]').forEach(b=>{b.addEventListener('click',()=>{if(b.disabled)return;document.querySelectorAll('[data-group="canal"]').forEach(x=>x.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed','true');state.canal=b.dataset.val;render();});});
+const STEP3SUB={actividad:'El correo se envía con el logo de TECHO y un botón a la actividad.',comunicacion:'Comunicación institucional: se envía con el logo de TECHO, sin botón de acción.'};
+document.querySelectorAll('[data-group="objetivo"]').forEach(b=>{b.addEventListener('click',()=>{if(b.disabled)return;document.querySelectorAll('[data-group="objetivo"]').forEach(x=>x.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed','true');state.objetivo=b.dataset.val;const s=document.getElementById('step3sub');if(s&&STEP3SUB[state.objetivo])s.textContent=STEP3SUB[state.objetivo];});});
+const asunto=document.getElementById('asunto');
+asunto.addEventListener('input',()=>{document.getElementById('asuntoN').textContent=asunto.value.length;render();});
+
+/* ---------- summary ---------- */
+const GLABEL={};GENEROS.forEach(([v,l])=>GLABEL[v]=l);
+function fmtD(d){return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getFullYear()).slice(2);}
+function renderSummary(){
+  const box=document.getElementById('summary');box.innerHTML='';const parts=[];
+  const mk=(label,val,onRemove)=>{const t=document.createElement('span');t.className='tag';t.innerHTML=`<span><b>${label}:</b> ${val}</span><button aria-label="Quitar">×</button>`;t.querySelector('button').onclick=onRemove;box.appendChild(t);parts.push(1);};
+  state.equipo.forEach(v=>mk('Equipo',v,()=>{state.equipo.delete(v);render();}));
+  state.baseVol.forEach(v=>mk('Base',v,()=>{state.baseVol.delete(v);render();}));
+  if(state.partMin!=null||state.partMax!=null){let v;if(state.partMin===0&&state.partMax===0)v='nunca participó';else v=state.partMin!=null&&state.partMax!=null?`${state.partMin}–${state.partMax}`:state.partMin!=null?`${state.partMin}+`:`hasta ${state.partMax}`;mk('Participaciones',v,()=>setPart('',''));}
+  if(state.edadMin!=null||state.edadMax!=null){const v=state.edadMin!=null&&state.edadMax!=null?`${state.edadMin}–${state.edadMax}`:state.edadMin!=null?`${state.edadMin}+`:`hasta ${state.edadMax}`;mk('Edad',v+' años',()=>{document.getElementById('edadMin').value='';document.getElementById('edadMax').value='';state.edadMin=state.edadMax=null;render();});}
+  if(state.fDesde||state.fHasta){const v=`${state.fDesde?fmtD(state.fDesde):'…'} a ${state.fHasta?fmtD(state.fHasta):'hoy'}`;mk('Última vez',v,()=>{fDesdeEl.value='';fHastaEl.value='';updDates();});}
+  state.genero.forEach(v=>mk('Género',GLABEL[v]||v,()=>{state.genero.delete(v);render();}));
+  state.sede.forEach(v=>mk('Sede',v,()=>{state.sede.delete(v);render();}));
+  state.tipo.forEach(v=>mk('Tipo',v,()=>{state.tipo.delete(v);render();}));
+  state.actividad.forEach(v=>mk('Actividad',v,()=>{state.actividad.delete(v);render();}));
+  state.universidad.forEach(v=>mk('Universidad',v,()=>{state.universidad.delete(v);render();}));
+  if(!parts.length){box.innerHTML='<span class="summary__none">Sin filtros: la comunicación llega a toda la población de perfil seleccionada.</span>';return;}
+  const clr=document.createElement('button');clr.className='clear-all';clr.textContent='Limpiar todo';
+  clr.onclick=()=>{['equipo','baseVol','sede','genero','universidad','tipo','actividad'].forEach(k=>state[k].clear());['edadMin','edadMax','partMin','partMax'].forEach(k=>state[k]=null);['edadMin','edadMax','partMin','partMax','fDesde','fHasta'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});state.fDesde=state.fHasta=null;render();};
+  box.appendChild(clr);
+}
+
+/* ---------- render ---------- */
+const CANAL_LABEL={email:'email',push:'push',whatsapp:'WhatsApp'};
+const SEND_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>';
+const PAY_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>';
+function fmtUSD(n){return 'US$ '+n.toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function buildBy(list){const by={};list.forEach(p=>{const r=COUNTRY_RATE[p.pais]||0;if(!by[p.pais])by[p.pais]={n:0,sum:0};by[p.pais].n++;by[p.pais].sum+=r;});return by;}
+let LAST={ok:0,waTotal:0,by:null};
+function render(){
+  document.querySelectorAll('.perfil').forEach(b=>b.setAttribute('aria-pressed',state.perfiles.has(b.dataset.perfil)));
+  document.getElementById('facetEquipo').hidden=!state.perfiles.has('equipofijo');
+  document.getElementById('facetBaseVol').hidden=!state.perfiles.has('voluntariado');
+  const perfilBase={};DATA.forEach(p=>perfilBase[p.perfil]=(perfilBase[p.perfil]||0)+1);
+  document.querySelectorAll('[data-pc]').forEach(el=>{el.textContent=(perfilBase[el.dataset.pc]||0).toLocaleString('es');});
+
+  buildEquipo(); buildBaseVol();
+  // prune actividad selections outside current tipo scope
+  const actOptions=state.tipo.size?[...state.tipo].flatMap(t=>ACT_BY_TIPO[t]):ALL_ACTS;
+  [...state.actividad].forEach(a=>{if(!actOptions.includes(a))state.actividad.delete(a);});
+  ['genero','sede','tipo','actividad','universidad'].forEach(updateDropdown);
+  document.getElementById('tipoMini').textContent=state.tipo.size?`${state.tipo.size} elegido(s)`:'';
+  document.getElementById('actMini').textContent=state.tipo.size?`de los tipos elegidos`:'';
+  document.getElementById('nuncaChip').setAttribute('aria-pressed',state.partMin===0&&state.partMax===0);
+
+  renderSummary();
+
+  const seg=DATA.filter(p=>passes(p,null));
+  const okList=seg.filter(p=>p.consent[state.canal]);
+  const total=seg.length, ok=okList.length, no=total-ok;
+  if(!state.sending){
+    document.getElementById('railEyebrow').textContent='Audiencia estimada';
+    document.getElementById('segTotal').textContent=total.toLocaleString('es');
+    document.getElementById('segSub').textContent=total===1?'persona en el segmento':'personas en el segmento';
+  }
+  document.getElementById('canalName').textContent=CANAL_LABEL[state.canal];
+  document.getElementById('reachOk').textContent=ok.toLocaleString('es');
+  document.getElementById('reachNo').textContent=no.toLocaleString('es');
+  document.getElementById('reachBar').style.width=(total?Math.round(ok/total*100):0)+'%';
+
+  // costo por WhatsApp
+  const isWa=state.canal==='whatsapp';
+  document.getElementById('costWa').hidden=!isWa;
+  let waTotal=0;
+  if(isWa){
+    const by={};
+    okList.forEach(p=>{const r=COUNTRY_RATE[p.pais]||0;waTotal+=r;if(!by[p.pais])by[p.pais]={n:0,sum:0};by[p.pais].n++;by[p.pais].sum+=r;});
+    document.getElementById('waTotal').textContent=fmtUSD(waTotal);
+    const avg=ok?waTotal/ok:0;
+    document.getElementById('waMeta').textContent=`${ok.toLocaleString('es')} mensajes · promedio ${fmtUSD(avg)} c/u`;
+    document.getElementById('waByCountry').innerHTML=Object.entries(by).sort((a,b)=>b[1].sum-a[1].sum).map(([k,v])=>`<div class="cw-row"><span class="cw-name">${k} <small>${v.n.toLocaleString('es')} × ${fmtUSD(COUNTRY_RATE[k]||0)}</small></span><b>${fmtUSD(v.sum)}</b></div>`).join('');
+  }
+  LAST={ok,waTotal,by:isWa?buildBy(okList):null};
+
+  const btn=document.getElementById('sendBtn');
+  const ready=ok>0&&asunto.value.trim().length>0;
+  btn.disabled=!ready;
+  btn.innerHTML=(isWa?PAY_ICON:SEND_ICON)+(isWa?`Aceptar y pagar ${fmtUSD(waTotal)}`:'Confirmar y enviar');
+  document.getElementById('sendMeta').textContent=ok===0
+    ?'Nadie del segmento aceptó este canal. Ajustá el segmento o el canal.'
+    :(asunto.value.trim().length===0?'Completá el asunto para habilitar el envío.'
+    :(isWa?`Se cobra ${fmtUSD(waTotal)} por Stripe y luego se dispara a ${ok.toLocaleString('es')} personas.`
+          :`Listo para enviar a ${ok.toLocaleString('es')} personas por ${CANAL_LABEL[state.canal]}.`));
+}
+
+/* ---------- sending (dentro del panel de audiencia) ---------- */
+let sendTimer=null;
+function toast(msg){const t=document.getElementById('toast');document.getElementById('toastMsg').textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200);}
+function setSendingView(on){
+  state.sending=on;
+  document.getElementById('railEstimate').hidden=on;
+  document.getElementById('railSending').hidden=!on;
+}
+function startSend(total){
+  setSendingView(true);
+  const fill=document.getElementById('progFill'),bar=document.getElementById('progbar');
+  const pct=document.getElementById('progPct'),rate=document.getElementById('progRate');
+  const stSent=document.getElementById('stSent'),stFail=document.getElementById('stFail'),stQueue=document.getElementById('stQueue');
+  const closeBtn=document.getElementById('sendCloseBtn'),bgBtn=document.getElementById('sendBgBtn');
+  document.getElementById('railEyebrow').textContent='Enviando comunicación';
+  document.getElementById('segTotal').textContent=total.toLocaleString('es');
+  document.getElementById('segSub').textContent='correos por '+CANAL_LABEL[state.canal];
+  bar.classList.remove('done');closeBtn.hidden=true;bgBtn.hidden=false;
+  let sent=0,failed=0;const perTick=Math.max(3,Math.round(total/22));
+  rate.textContent='~'+Math.round(perTick*(1000/260)*60).toLocaleString('es')+' por min';
+  stQueue.textContent=total.toLocaleString('es');stSent.textContent='0';stFail.textContent='0';fill.style.width='0%';pct.textContent='0%';
+  clearInterval(sendTimer);
+  sendTimer=setInterval(()=>{
+    const remaining=total-sent-failed;const batch=Math.min(perTick,remaining);let f=0;for(let i=0;i<batch;i++)if(rnd()<0.018)f++;
+    failed+=f;sent+=(batch-f);const done=sent+failed;const p=Math.round(done/total*100);
+    fill.style.width=p+'%';pct.textContent=p+'%';stSent.textContent=sent.toLocaleString('es');stFail.textContent=failed.toLocaleString('es');stQueue.textContent=(total-done).toLocaleString('es');
+    if(done>=total){clearInterval(sendTimer);bar.classList.add('done');document.getElementById('railEyebrow').textContent='Envío completado';document.getElementById('segSub').textContent=failed>0?`${failed.toLocaleString('es')} fallaron · se reintentarán`:'entregados con éxito';rate.textContent='Finalizado';bgBtn.hidden=true;closeBtn.hidden=false;}
+  },260);
+}
+function endSend(msg){clearInterval(sendTimer);setSendingView(false);render();toast(msg);}
+document.getElementById('sendBtn').addEventListener('click',()=>{
+  if(document.getElementById('sendBtn').disabled)return;
+  if(state.canal==='whatsapp') openPay(LAST.waTotal,LAST.ok);
+  else startSend(LAST.ok);
+});
+document.getElementById('sendCloseBtn').addEventListener('click',()=>endSend('Comunicación enviada. Mirá el detalle en “Comunicaciones enviadas”.'));
+document.getElementById('sendBgBtn').addEventListener('click',()=>endSend('El envío sigue en segundo plano.'));
+
+/* ---------- Stripe checkout (demo) ---------- */
+const payEl=document.getElementById('pay');
+function openPay(amount,count){
+  document.getElementById('payForm').hidden=false;
+  document.getElementById('payDone').hidden=true;
+  document.getElementById('payAmount').textContent=fmtUSD(amount);
+  document.getElementById('payLine').textContent=`${count.toLocaleString('es')} mensajes de WhatsApp`;
+  const by=LAST.by||{};
+  document.getElementById('payBreak').innerHTML=Object.entries(by).sort((a,b)=>b[1].sum-a[1].sum).map(([k,v])=>`<div class="pb-row"><span>${k} · ${v.n.toLocaleString('es')} msj</span><b>${fmtUSD(v.sum)}</b></div>`).join('')+`<div class="pb-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>Se registra por país en la metadata del pago para conciliación interna.</div>`;
+  const pb=document.getElementById('payBtn'); pb.disabled=false;
+  pb.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Pagar '+fmtUSD(amount)+'</span>';
+  payEl._count=count; payEl._amount=amount;
+  payEl.classList.add('show');
+}
+function closePay(){payEl.classList.remove('show');}
+document.getElementById('payCancel').addEventListener('click',closePay);
+payEl.addEventListener('click',e=>{if(e.target===payEl)closePay();});
+document.getElementById('payBtn').addEventListener('click',function(){
+  this.disabled=true; this.innerHTML='<span class="pay__spin"></span> Procesando pago…';
+  setTimeout(()=>{
+    document.getElementById('payForm').hidden=true;
+    document.getElementById('payDone').hidden=false;
+    document.getElementById('payDoneMsg').textContent=`Se cobraron ${fmtUSD(payEl._amount)}. Iniciando el envío…`;
+    setTimeout(()=>{ closePay(); startSend(payEl._count); }, 1300);
+  }, 1500);
+});
+
+document.getElementById('advToggle').addEventListener('click',function(){const open=this.getAttribute('aria-expanded')==='true';this.setAttribute('aria-expanded',!open);document.getElementById('advPanel').hidden=open;});
+
+render();
+</script>
