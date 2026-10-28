@@ -5,7 +5,7 @@ Visual interactiva de la propuesta de gamificación de MiTECHO V3 (roadmap 2027�
 - **Voluntariado masivo:** camino tipo Duolingo donde cada mundo es una vivienda (pilotes, piso, paredes, techo), con roles como clavos, clavos dorados para actividades con baja convocatoria y una colección de tarjetas de modelos de vivienda.
 - **Equipo permanente:** carrera generacional Rookie → Champion → Guardián → Alumni según tiempo, roles, formación, metas e hitos (MHC) y vida de equipo.
 
-Incluye un simulador del camino (con el ritual de inauguración: se corta la cinta con los colores de la bandera del país elegido, con globos y confeti, y sale la tarjeta de la vivienda), una calculadora de XP, el catálogo de medallas, la carrera del equipo permanente, las pantallas del Figma y el mapa de datos de la plataforma [techo/actividades](https://github.com/techo/actividades).
+Incluye un simulador del camino (con el ritual de inauguración: se corta la cinta con los colores de la bandera del país elegido, con globos y confeti, y sale la tarjeta de la vivienda), una calculadora de XP, el catálogo de medallas, la carrera del equipo permanente, la visual que vamos a seguir y el mapa de datos de la plataforma [techo/actividades](https://github.com/techo/actividades).
 
 ## Ver
 
